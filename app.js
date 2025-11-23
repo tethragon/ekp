@@ -2,6 +2,7 @@ const App = {
     // 1. Ιδιότητες
     inputs: [], 
     problemContainer: null,
+    lcmEquationContainer: null,
     checkBtn: null,
     practiceModeBtn: null,
     startGameBtn: null,
@@ -10,7 +11,7 @@ const App = {
     practiceLink: null,
 
     // State
-    currentNumbers: [], // Οι αρχικοί αριθμοί
+    currentNumbers: [], 
     isInGameMode: false,
     gameProblems: [],
     gameCurrentProblemIndex: 0,
@@ -21,7 +22,6 @@ const App = {
     // 2. Αρχικοποίηση
     initPracticeMode: function() {
         this.isInGameMode = false;
-        // 5 inputs για την εξάσκηση
         this.inputs = [
             document.getElementById('num1'),
             document.getElementById('num2'),
@@ -30,6 +30,7 @@ const App = {
             document.getElementById('num5')
         ];
         this.problemContainer = document.getElementById('problemContainer');
+        this.lcmEquationContainer = document.getElementById('lcmEquationContainer');
         this.checkBtn = document.getElementById('checkBtn');
         this.practiceModeBtn = document.getElementById('practiceModeBtn');
         this.resultContainer = document.getElementById('resultContainer');
@@ -51,13 +52,13 @@ const App = {
 
     initGameMode: function() {
         this.isInGameMode = true;
-        // Στο Game Mode είναι σταθερά 3 inputs
         this.inputs = [
             document.getElementById('num1'),
             document.getElementById('num2'),
             document.getElementById('num3')
         ];
         this.problemContainer = document.getElementById('problemContainer');
+        this.lcmEquationContainer = document.getElementById('lcmEquationContainer');
         this.checkBtn = document.getElementById('checkBtn');
         this.startGameBtn = document.getElementById('startGameBtn');
         this.resultContainer = document.getElementById('resultContainer');
@@ -74,7 +75,6 @@ const App = {
             }
         });
         
-        // Cheat key (PageUp)
         document.addEventListener('keydown', (e) => {
             if (this.isInGameMode && e.key === 'PageUp') {
                 e.preventDefault();
@@ -133,6 +133,8 @@ const App = {
     },
 
     formatFactors: function(factors) {
+        if (!factors || factors.length === 0) return "";
+        
         const counts = {};
         factors.forEach(f => counts[f] = (counts[f] || 0) + 1);
         
@@ -161,17 +163,35 @@ const App = {
                 if (nextValues[idx] !== undefined) inp.value = nextValues[idx];
             });
         }
+        this.updateLCMEquation();
+        setTimeout(() => {
+            const finalInput = document.getElementById('finalLcmInput');
+            if (finalInput) {
+                finalInput.value = this.solveCanonicalLCM(this.currentNumbers).lcm;
+            }
+        }, 50);
     },
 
     buildProblemUI: function(numbers) {
         this.resultContainer.classList.remove('visible');
         this.problemContainer.innerHTML = '';
-        
+        if (this.lcmEquationContainer) this.lcmEquationContainer.innerHTML = '';
+
         const validNums = numbers.filter(n => n > 1);
+
+        // --- ΕΛΕΓΧΟΣ: Ελάχιστοι Αριθμοί ---
         if (validNums.length < 2 && this.isInGameMode === false && numbers.some(n=>n>0)) {
-             this.problemContainer.innerHTML = '<p style="color:#d9534f">Εισάγετε τουλάχιστον 2 αριθμούς > 1.</p>';
+             this.problemContainer.innerHTML = '<p style="color:#d9534f; font-weight:bold;">Εισάγετε τουλάχιστον 2 αριθμούς μεγαλύτερους του 1.</p>';
              return;
         } else if (validNums.length === 0) return;
+
+        // --- ΕΛΕΓΧΟΣ: Διπλότυποι Αριθμοί (ΝΕΟ) ---
+        // Χρησιμοποιούμε Set για να βρούμε τους μοναδικούς αριθμούς
+        const uniqueNums = new Set(validNums);
+        if (uniqueNums.size !== validNums.length) {
+            this.problemContainer.innerHTML = '<p style="color:#d9534f; font-weight:bold;">Παρακαλώ μην εισάγετε τον ίδιο αριθμό δύο φορές.<br>Αλλάξτε τους αριθμούς για να συνεχίσετε.</p>';
+            return;
+        }
 
         this.currentNumbers = validNums;
         const solution = this.solveCanonicalLCM(validNums);
@@ -181,7 +201,6 @@ const App = {
         table.className = 'steps-table';
         const tbody = document.createElement('tbody');
 
-        // Γραμμή 1: Αρχικοί αριθμοί
         const trFirst = document.createElement('tr');
         validNums.forEach(n => {
             const td = document.createElement('td');
@@ -194,7 +213,6 @@ const App = {
         trFirst.appendChild(tdDiv);
         tbody.appendChild(trFirst);
 
-        // Επόμενες γραμμές
         for (let i = 1; i < steps.length - 1; i++) {
             const tr = document.createElement('tr');
             validNums.forEach(() => {
@@ -209,7 +227,6 @@ const App = {
             tbody.appendChild(tr);
         }
 
-        // Τελευταία γραμμή
         const trLast = document.createElement('tr');
         validNums.forEach(() => {
             const td = document.createElement('td');
@@ -223,20 +240,65 @@ const App = {
 
         table.appendChild(tbody);
         this.problemContainer.appendChild(table);
+
+        if (this.lcmEquationContainer) {
+            this.updateLCMEquation();
+            const divisorInputs = this.problemContainer.querySelectorAll('.quiz-input.divisor');
+            divisorInputs.forEach(input => {
+                input.addEventListener('input', this.updateLCMEquation.bind(this));
+            });
+        }
     },
 
-    // 5. Logic: Δυναμική Επαλήθευση (Διορθωμένη)
-    
+    updateLCMEquation: function() {
+        if (!this.lcmEquationContainer) return;
+
+        const numbersStr = this.currentNumbers.join(', ');
+        let html = `ΕΚΠ(${numbersStr}) = `;
+
+        const divisorInputs = this.problemContainer.querySelectorAll('.quiz-input.divisor');
+        const filledDivisors = [];
+        
+        divisorInputs.forEach(input => {
+            const val = input.value.trim();
+            if (val !== '') {
+                filledDivisors.push(val);
+            }
+        });
+
+        if (filledDivisors.length > 0) {
+            html += filledDivisors.join(' &middot; ');
+            html += ' &middot; ';
+        }
+
+        const lastDivisorInput = divisorInputs[divisorInputs.length - 1];
+        
+        if (lastDivisorInput && lastDivisorInput.value !== '') {
+            html = html.slice(0, -10); 
+            html += ` = <input type="number" id="finalLcmInput" class="lcm-final-input" placeholder="?">`;
+        }
+
+        this.lcmEquationContainer.innerHTML = html;
+        
+        const finalInput = document.getElementById('finalLcmInput');
+        if (finalInput) {
+            finalInput.addEventListener('keyup', (e) => {
+                 if (e.key === 'Enter') this.handleCheck();
+            });
+        }
+    },
+
+    // 5. Logic: Validation
     validateCurrentProblem: function() {
         let runningValues = [...this.currentNumbers]; 
         let allCorrect = true;
         let correctCellsThisRound = 0;
         let userStepsReport = [];
         let userFactors = []; 
+        let userFinalLCM = null;
 
         const rows = this.problemContainer.querySelectorAll('tbody tr');
         
-        // Loop σε κάθε γραμμή (βήμα)
         for (let i = 0; i < rows.length - 1; i++) {
             const row = rows[i];
             const divisorInput = row.querySelector('.quiz-input.divisor');
@@ -244,9 +306,7 @@ const App = {
 
             if (!this.isInGameMode) divisorInput.classList.remove('wrong', 'correct');
             
-            // --- Έλεγχος Διαιρέτη ---
             let isDivisorValid = false;
-            // Ο διαιρέτης είναι έγκυρος αν είναι πρώτος ΚΑΙ διαιρεί τουλάχιστον έναν αριθμό που δεν είναι 1
             if (!isNaN(userDivisor) && this.isPrime(userDivisor)) {
                 if (runningValues.some(val => val > 1 && val % userDivisor === 0)) {
                     isDivisorValid = true;
@@ -269,24 +329,17 @@ const App = {
                 quotients: []
             };
 
-            // --- Έλεγχος Πηλίκων (Επόμενη Γραμμή) ---
             if (i < rows.length - 2) { 
                 const nextRow = rows[i+1];
                 const quotientInputs = nextRow.querySelectorAll('.quiz-input.quotient');
                 
                 let expectedNextValues;
-                
                 if (isDivisorValid) {
-                    // Υπολογισμός αναμενόμενων τιμών
                     expectedNextValues = runningValues.map(val => {
-                        // Αν ο αριθμός είναι ήδη 1, παραμένει 1
                         if (val === 1) return 1;
-                        // Αν διαιρείται, κάνουμε διαίρεση. Αλλιώς μένει ίδιος.
                         return (val % userDivisor === 0) ? val / userDivisor : val;
                     });
                 } else {
-                    // Αν ο διαιρέτης είναι λάθος, δεν μπορούμε να έχουμε "σωστή" συνέχεια,
-                    // κρατάμε τα προηγούμενα για να μην σπάσει ο κώδικας.
                     expectedNextValues = runningValues; 
                 }
 
@@ -299,9 +352,6 @@ const App = {
 
                     if (!this.isInGameMode) inp.classList.remove('wrong', 'correct');
 
-                    // Το κελί είναι σωστό αν:
-                    // 1. Ο διαιρέτης ήταν έγκυρος ΚΑΙ ο χρήστης βρήκε το σωστό πηλίκο
-                    // 2. ΕΙΔΙΚΗ ΠΕΡΙΠΤΩΣΗ: Αν το expectedVal είναι 1, δεχόμαστε το 1 ως σωστό.
                     if (isDivisorValid && userVal === expectedVal) {
                         if (!this.isInGameMode) inp.classList.add('correct');
                         correctCellsThisRound++;
@@ -314,8 +364,6 @@ const App = {
                     rowReport.quotients.push({ val: isNaN(userVal)?'-':userVal, correct: qCorrect });
                 });
 
-                // Ενημερώνουμε τα runningValues ΜΟΝΟ αν όλη η σειρά είναι σωστή (μαθηματικά)
-                // και ο διαιρέτης ήταν έγκυρος. Έτσι αποφεύγουμε να μεταφέρουμε λάθος νούμερα παρακάτω.
                 if (isDivisorValid && thisRowMathCorrect) {
                     runningValues = expectedNextValues;
                 }
@@ -324,12 +372,35 @@ const App = {
             userStepsReport.push(rowReport);
         }
         
-        return { allCorrect, correctCellsThisRound, userFactors, userStepsReport };
+        // Check Final LCM
+        const finalInput = document.getElementById('finalLcmInput');
+        const actualLcm = this.solveCanonicalLCM(this.currentNumbers).lcm;
+        let finalLcmCorrect = false;
+
+        if (finalInput) {
+            userFinalLCM = finalInput.value;
+            const userLcmVal = parseInt(finalInput.value);
+            
+            if (!this.isInGameMode) finalInput.classList.remove('correct', 'wrong');
+            
+            if (userLcmVal === actualLcm) {
+                if (!this.isInGameMode) finalInput.classList.add('correct');
+                correctCellsThisRound++; 
+                finalLcmCorrect = true;
+            } else {
+                if (!this.isInGameMode) finalInput.classList.add('wrong');
+                allCorrect = false;
+            }
+        } else {
+            allCorrect = false;
+        }
+
+        return { allCorrect, correctCellsThisRound, userFactors, userStepsReport, userFinalLCM, actualLcm, finalLcmCorrect };
     },
 
     handleCheck: function() {
         const canonicalSolution = this.solveCanonicalLCM(this.currentNumbers);
-        const { allCorrect, correctCellsThisRound, userFactors, userStepsReport } = this.validateCurrentProblem();
+        const { allCorrect, correctCellsThisRound, userFactors, userStepsReport, userFinalLCM, finalLcmCorrect } = this.validateCurrentProblem();
 
         if (this.isInGameMode) {
             this.gameCorrectCells += correctCellsThisRound;
@@ -338,7 +409,9 @@ const App = {
                 wasCorrect: allCorrect,
                 canonicalSolution: canonicalSolution, 
                 userFactors: userFactors,
-                userSteps: userStepsReport
+                userSteps: userStepsReport,
+                userFinalLCM: userFinalLCM,     
+                finalLcmCorrect: finalLcmCorrect
             });
 
             this.gameCurrentProblemIndex++;
@@ -352,12 +425,10 @@ const App = {
             let html = '';
             
             if (allCorrect) {
-                const userLCM = userFactors.reduce((a,b)=>a*b, 1);
-                html += `<strong>Σωστά!</strong><br>`;
-                html += `Βρήκες το ΕΚΠ(${numbersStr}) = ${this.formatFactors(userFactors)} = <strong>${userLCM}</strong>`;
+                html += `<strong>Μπράβο! Όλα σωστά!</strong><br>`;
             } else {
                 html += `<strong>Υπάρχουν λάθη.</strong><br>`;
-                html += `Θυμήσου: Διαιρούμε με <strong>πρώτους αριθμούς</strong> (2, 3, 5, 7, 11...) που διαιρούν ακριβώς τουλάχιστον έναν αριθμό.<br>`;
+                html += `Έλεγξε τον πίνακα και το τελικό γινόμενο.<br>`;
                 html += `Η σωστή απάντηση είναι: <strong>${canonicalSolution.lcm}</strong>`;
             }
             
@@ -378,8 +449,12 @@ const App = {
 
         const count = Math.random() > 0.5 ? 2 : 3;
         const nums = [];
-        for(let i=0; i<count; i++) {
-            nums.push(Math.floor(Math.random() * 28) + 3);
+        
+        while(nums.length < count) {
+            let n = Math.floor(Math.random() * 28) + 3;
+            if (!nums.includes(n)) {
+                nums.push(n);
+            }
         }
         
         for(let i=0; i < this.inputs.length; i++) {
@@ -427,6 +502,7 @@ const App = {
         this.resultContainer.classList.remove('visible');
         
         this.problemContainer.classList.remove('hidden');
+        if (this.lcmEquationContainer) this.lcmEquationContainer.innerHTML = '';
 
         while(this.gameProblems.length < 5) {
             const count = Math.random() > 0.7 ? 3 : 2; 
@@ -450,8 +526,9 @@ const App = {
         if(this.inputs[2]) this.inputs[2].value = nums[2] || '';
         
         this.buildProblemUI(nums);
+        
         const inputsCount = this.problemContainer.querySelectorAll('input').length;
-        this.gameTotalCells += inputsCount;
+        this.gameTotalCells += inputsCount + 1;
 
         if (index === 4) {
             this.checkBtn.textContent = "Τέλος & Βαθμολογία";
@@ -461,6 +538,7 @@ const App = {
     showFinalScore: function() {
         this.isInGameMode = false;
         this.problemContainer.classList.add('hidden');
+        if (this.lcmEquationContainer) this.lcmEquationContainer.innerHTML = '';
         this.checkBtn.classList.add('hidden');
         this.gameProgress.classList.add('hidden');
         
@@ -526,14 +604,26 @@ const App = {
                 html += '</tbody></table>';
             }
 
+            const userFinalVal = item.userFinalLCM || "-";
+            const userFactorsFormatted = this.formatFactors(item.userFactors);
+            let userFullAnswer = userFinalVal;
+            
+            if (userFactorsFormatted && userFactorsFormatted !== "") {
+                userFullAnswer = `${userFactorsFormatted} = ${userFinalVal}`;
+            }
+
+            const ansClass = item.finalLcmCorrect ? 'color: #155724; font-weight: bold;' : 'color: #721c24; font-weight: bold;';
+            
+            html += `<p style="margin-top:10px;">Η απάντησή σου για το ΕΚΠ: <span style="${ansClass}">${userFullAnswer}</span></p>`;
+
             if (!item.wasCorrect) {
+                 const correctFactors = this.formatFactors(item.canonicalSolution.factors);
                  html += `<div style="margin-top:10px; padding:10px; background:rgba(255,255,255,0.7); border-radius:5px;">
                             <strong>Σωστή Απάντηση:</strong><br>
-                            ΕΚΠ = <strong>${item.canonicalSolution.lcm}</strong><br>
-                            <span style="font-size:0.9em; color:#555;">(Μια σωστή σειρά παραγόντων: ${item.canonicalSolution.factors.join(' &middot; ')})</span>
+                            ${correctFactors} = <strong>${item.canonicalSolution.lcm}</strong>
                           </div>`;
             } else {
-                html += `<p style="color:#155724; font-weight:bold;">Άριστα! Βρήκες: ${item.userFactors.join(' &middot; ')} = ${item.canonicalSolution.lcm}</p>`;
+                html += `<p style="color:#155724; font-weight:bold;">Άριστα!</p>`;
             }
             html += `</div>`;
         });

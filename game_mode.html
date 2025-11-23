@@ -30,6 +30,12 @@
         .quiz-input.wrong { background-color: #fff0f0; border-color: #e60000; }
         .quiz-input.correct { background-color: #f0fff0; border-color: #009900; }
 
+        /* Στυλ για την εξίσωση ΕΚΠ (Game Mode) */
+        #lcmEquationContainer { margin-top: 20px; font-size: 1.3rem; font-weight: bold; color: #333; min-height: 40px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .lcm-final-input { width: 80px; padding: 5px; font-size: 1.3rem; font-weight: bold; text-align: center; border: 2px solid #005a9c; border-radius: 5px; color: #005a9c; }
+        .lcm-final-input.correct { background-color: #d4edda; border-color: #28a745; color: #155724; }
+        .lcm-final-input.wrong { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }
+
         .button-container { margin-top: 25px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;}
         button, .button-link { padding: 12px 20px; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; text-decoration: none; display: inline-block; }
         #checkBtn { background-color: #007bff; color: white; }
@@ -46,14 +52,13 @@
         #resultContainer h2 { color: #005a9c; margin-top: 0; }
         #resultContainer strong { font-size: 2rem; color: #d9534f; }
         
-        /* --- REPORT STYLES (ΝΕΑ) --- */
+        /* --- REPORT STYLES --- */
         .report-section { text-align: left; margin-top: 15px; padding-top: 15px; border-top: 2px solid #005a9c; }
         .report-item { margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
         .report-item.correct { background-color: #f0fff0; border-color: #009900; }
         .report-item.incorrect { background-color: #fff0f0; border-color: #e60000; }
         .report-item h4 { margin-top: 0; margin-bottom: 5px; font-size: 1.2rem; }
         
-        /* Πίνακας Αναφοράς */
         .report-table { 
             margin: 10px auto; 
             border-collapse: collapse; 
@@ -71,7 +76,6 @@
             font-weight: bold; 
             background-color: #f9f9f9;
         }
-        /* Χρώματα για σωστό/λάθος στα κελιά */
         .cell-correct { background-color: #d4edda !important; color: #155724; }
         .cell-wrong { background-color: #f8d7da !important; color: #721c24; font-weight: bold; }
         .cell-neutral { background-color: #fff; }
@@ -96,6 +100,8 @@
 
         <div id="gameProgress" class="hidden"></div>
         <div id="problemContainer"></div>
+        
+        <div id="lcmEquationContainer"></div>
 
         <div class="button-container">
             <button id="checkBtn">Έλεγχος</button>
