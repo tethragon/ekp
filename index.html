@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Εξάσκηση στο ΕΚΠ</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 25px 30px; width: 100%; max-width: 800px; text-align: center; overflow: hidden; }
+        h1 { color: #005a9c; margin-top: 0; margin-bottom: 20px; font-size: 1.5rem; }
+        .problem-header { margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .problem-header label { font-weight: 600; color: #333; }
+        .inputs-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .num-input { font-family: "Courier New", Courier, monospace; font-size: 2rem; font-weight: bold; color: #005a9c; width: 70px; text-align: center; border: 2px solid #007bff; border-radius: 6px; padding: 8px; }
+        .num-input:disabled { background-color: #eee; color: #777; border-color: #ddd; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        .hidden { display: none; }
+        #problemContainer { margin: 20px auto; width: fit-content; overflow-x: auto; max-width: 100%; }
+        
+        /* Πίνακας Διαδοχικών Διαιρέσεων */
+        .steps-table { border-collapse: collapse; margin: 0 auto; }
+        .steps-table td { padding: 5px 10px; font-family: "Courier New", Courier, monospace; font-size: 1.1rem; text-align: center; height: 40px; }
+        .steps-table td.divisor-col { border-left: 3px solid #333; padding-left: 15px; color: #d9534f; font-weight: bold; }
+        .steps-table tr:last-child td { font-weight: bold; color: #28a745; }
+        
+        .quiz-input { width: 50px; padding: 8px; font-family: "Courier New", Courier, monospace; font-size: 1.1rem; text-align: center; border: 2px solid #ddd; border-radius: 4px; transition: all 0.2s ease; }
+        .quiz-input:focus { outline: none; border-color: #007bff; }
+        .quiz-input.wrong { background-color: #fff0f0; border-color: #e60000; }
+        .quiz-input.correct { background-color: #f0fff0; border-color: #009900; }
+        
+        .button-container { margin-top: 25px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;}
+        button, .button-link { padding: 12px 20px; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; text-decoration: none; display: inline-block; }
+        #checkBtn { background-color: #007bff; color: white; }
+        #checkBtn:hover { background-color: #0056b3; }
+        #practiceModeBtn { background-color: #6c757d; color: white; }
+        #practiceModeBtn:hover { background-color: #5a6268; }
+        .game-link { background-color: #d9534f; color: white; }
+        .game-link:hover { background-color: #c9302c; }
+        
+        #resultContainer { margin-top: 20px; padding: 15px; background-color: #e6f7ff; border: 1px solid #b3e0ff; border-radius: 6px; text-align: left; font-size: 1.1rem; font-weight: 600; color: #004085; min-height: 1.5em; line-height: 1.5; }
+        #resultContainer:not(.visible) { visibility: hidden; opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; }
+        #resultContainer.visible { visibility: visible; opacity: 1; max-height: 1000px; transition: all 0.4s ease; }
+        sup { font-size: 0.8em; vertical-align: super; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Εύρεση ΕΚΠ (Διαδοχικές Διαιρέσεις)</h1>
+        
+        <div class="problem-header">
+            <label>Εισάγετε αριθμούς (έως 5):</label>
+            <div class="inputs-row">
+                <input type="number" class="num-input" id="num1" placeholder="-">
+                <input type="number" class="num-input" id="num2" placeholder="-">
+                <input type="number" class="num-input" id="num3" placeholder="-">
+                <input type="number" class="num-input" id="num4" placeholder="-">
+                <input type="number" class="num-input" id="num5" placeholder="-">
+            </div>
+        </div>
+
+        <div id="problemContainer"></div>
+
+        <div class="button-container">
+            <button id="practiceModeBtn">Νέοι Αριθμοί</button>
+            <button id="checkBtn">Έλεγχος</button>
+            <a href="game_mode.html" class="button-link game-link">Μετάβαση σε Game Mode</a>
+        </div>
+
+        <div id="resultContainer"></div>
+    </div>
+    
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            App.initPracticeMode();
+        });
+    </script>
+</body>
+</html>

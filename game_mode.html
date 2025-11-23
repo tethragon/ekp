@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Mode - ΕΚΠ</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 25px 30px; width: 100%; max-width: 650px; text-align: center; }
+        h1 { color: #005a9c; margin-top: 0; margin-bottom: 20px; font-size: 1.5rem; }
+        .problem-header { margin-bottom: 25px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .problem-header label { font-weight: 600; color: #333; }
+        .inputs-row { display: flex; gap: 10px; justify-content: center; }
+        .num-input { font-family: "Courier New", Courier, monospace; font-size: 2rem; font-weight: bold; color: #005a9c; width: 80px; text-align: center; border: 2px solid #007bff; border-radius: 6px; padding: 8px; }
+        .num-input:disabled { background-color: #eee; color: #777; border-color: #ddd; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        #gameProgress { font-size: 1.2rem; font-weight: 600; color: #d9534f; margin-bottom: 15px; }
+        .hidden { display: none; }
+        #problemContainer { margin: 20px auto; width: fit-content; }
+        
+        /* Πίνακας Διαδοχικών Διαιρέσεων (Game Play) */
+        .steps-table { border-collapse: collapse; margin: 0 auto; }
+        .steps-table td { padding: 5px 10px; font-family: "Courier New", Courier, monospace; font-size: 1.1rem; text-align: center; height: 40px; }
+        .steps-table td.divisor-col { border-left: 3px solid #333; padding-left: 15px; color: #d9534f; font-weight: bold; }
+        .steps-table tr:last-child td { font-weight: bold; color: #28a745; }
+
+        .quiz-input { width: 50px; padding: 8px; font-family: "Courier New", Courier, monospace; font-size: 1.1rem; text-align: center; border: 2px solid #ddd; border-radius: 4px; transition: all 0.2s ease; }
+        .quiz-input:focus { outline: none; border-color: #007bff; }
+        .quiz-input.wrong { background-color: #fff0f0; border-color: #e60000; }
+        .quiz-input.correct { background-color: #f0fff0; border-color: #009900; }
+
+        .button-container { margin-top: 25px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;}
+        button, .button-link { padding: 12px 20px; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; text-decoration: none; display: inline-block; }
+        #checkBtn { background-color: #007bff; color: white; }
+        #checkBtn:hover { background-color: #0056b3; }
+        .practice-link { background-color: #6c757d; color: white; }
+        .practice-link:hover { background-color: #5a6268; }
+        #startGameBtn { background-color: #d9534f; color: white; } 
+        #startGameBtn:hover { background-color: #c9302c; }
+        
+        #resultContainer { margin-top: 20px; padding: 15px; background-color: #f0fff0; border: 1px solid #009900; border-radius: 6px; text-align: center; font-size: 1.1rem; font-weight: 600; color: #004085; min-height: 1.5em; line-height: 1.5; }
+        #resultContainer:not(.visible) { visibility: hidden; opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; }
+        #resultContainer.visible { visibility: visible; opacity: 1; transition: all 0.4s ease; }
+        
+        #resultContainer h2 { color: #005a9c; margin-top: 0; }
+        #resultContainer strong { font-size: 2rem; color: #d9534f; }
+        
+        /* --- REPORT STYLES (ΝΕΑ) --- */
+        .report-section { text-align: left; margin-top: 15px; padding-top: 15px; border-top: 2px solid #005a9c; }
+        .report-item { margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
+        .report-item.correct { background-color: #f0fff0; border-color: #009900; }
+        .report-item.incorrect { background-color: #fff0f0; border-color: #e60000; }
+        .report-item h4 { margin-top: 0; margin-bottom: 5px; font-size: 1.2rem; }
+        
+        /* Πίνακας Αναφοράς */
+        .report-table { 
+            margin: 10px auto; 
+            border-collapse: collapse; 
+            background-color: #fff; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .report-table td { 
+            border: 1px solid #ccc; 
+            padding: 6px 10px; 
+            font-family: "Courier New", Courier, monospace; 
+            text-align: center; 
+        }
+        .report-table td.divisor-col { 
+            border-left: 3px solid #333; 
+            font-weight: bold; 
+            background-color: #f9f9f9;
+        }
+        /* Χρώματα για σωστό/λάθος στα κελιά */
+        .cell-correct { background-color: #d4edda !important; color: #155724; }
+        .cell-wrong { background-color: #f8d7da !important; color: #721c24; font-weight: bold; }
+        .cell-neutral { background-color: #fff; }
+        
+        sup { font-size: 0.8em; vertical-align: super; }
+        .button-container .practice-link { margin-top: 15px; width: calc(100% - 40px); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Game Mode</h1>
+        
+        <div class="problem-header">
+            <label>Αριθμοί προς εύρεση ΕΚΠ:</label>
+            <div class="inputs-row">
+                <input type="number" class="num-input" id="num1" disabled>
+                <input type="number" class="num-input" id="num2" disabled>
+                <input type="number" class="num-input" id="num3" disabled>
+            </div>
+        </div>
+
+        <div id="gameProgress" class="hidden"></div>
+        <div id="problemContainer"></div>
+
+        <div class="button-container">
+            <button id="checkBtn">Έλεγχος</button>
+            <button id="startGameBtn" class="hidden">Παίξε Ξανά</button>
+            <a href="index.html" class="button-link practice-link hidden">Επιστροφή στην Εξάσκηση</a>
+        </div>
+
+        <div id="resultContainer"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            App.initGameMode();
+        });
+    </script>
+</body>
+</html>
