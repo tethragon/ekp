@@ -46,6 +46,16 @@ const App = {
                 });
             }
         });
+        
+        // --- ΝΕΟ: Cheat Key (PageUp) και στην Εξάσκηση ---
+        document.addEventListener('keydown', (e) => {
+            // Ελέγχουμε αν ΔΕΝ είμαστε σε game mode (για να μην τρέξει διπλά αν αλλάξει η λογική αργότερα)
+            // και αν πατήθηκε το PageUp
+            if (!this.isInGameMode && e.key === 'PageUp') {
+                e.preventDefault();
+                this.fillCorrectAnswers();
+            }
+        });
 
         this.generatePracticeProblem();
     },
@@ -75,6 +85,7 @@ const App = {
             }
         });
         
+        // Cheat key (PageUp) στο Game Mode
         document.addEventListener('keydown', (e) => {
             if (this.isInGameMode && e.key === 'PageUp') {
                 e.preventDefault();
@@ -147,9 +158,12 @@ const App = {
     // 4. Διαχείριση UI
     
     fillCorrectAnswers: function() {
-        const { steps } = this.solveCanonicalLCM(this.currentNumbers);
+        // Υπολογισμός της λύσης
+        const solution = this.solveCanonicalLCM(this.currentNumbers);
+        const steps = solution.steps;
         const rows = this.problemContainer.querySelectorAll('tr');
         
+        // Συμπλήρωση πίνακα
         for (let i = 0; i < steps.length - 1; i++) {
             const currentRow = rows[i]; 
             const nextRow = rows[i+1];
@@ -163,11 +177,15 @@ const App = {
                 if (nextValues[idx] !== undefined) inp.value = nextValues[idx];
             });
         }
+        
+        // Ενημέρωση της εξίσωσης (ώστε να φανούν οι παράγοντες)
         this.updateLCMEquation();
+        
+        // Συμπλήρωση του τελικού αποτελέσματος (με μικρή καθυστέρηση για να προλάβει να δημιουργηθεί το input)
         setTimeout(() => {
             const finalInput = document.getElementById('finalLcmInput');
             if (finalInput) {
-                finalInput.value = this.solveCanonicalLCM(this.currentNumbers).lcm;
+                finalInput.value = solution.lcm;
             }
         }, 50);
     },
@@ -185,8 +203,7 @@ const App = {
              return;
         } else if (validNums.length === 0) return;
 
-        // --- ΕΛΕΓΧΟΣ: Διπλότυποι Αριθμοί (ΝΕΟ) ---
-        // Χρησιμοποιούμε Set για να βρούμε τους μοναδικούς αριθμούς
+        // --- ΕΛΕΓΧΟΣ: Διπλότυποι Αριθμοί ---
         const uniqueNums = new Set(validNums);
         if (uniqueNums.size !== validNums.length) {
             this.problemContainer.innerHTML = '<p style="color:#d9534f; font-weight:bold;">Παρακαλώ μην εισάγετε τον ίδιο αριθμό δύο φορές.<br>Αλλάξτε τους αριθμούς για να συνεχίσετε.</p>';
